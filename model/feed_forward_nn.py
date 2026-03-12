@@ -1,17 +1,26 @@
 import numpy as np
 
 class FeedForwardNN:
-    def __init__(self, input_size, output_size, hidden_layer_sizes):
-        pass
+    def __init__(self, input_size: int, output_size: int, hidden_layer: int):
+        self.z1 = None
+        self.a1 = None
+        self.w1 = np.random.randn(hidden_layer, input_size)
+        self.b1 = np.random.randn(hidden_layer)
+        self.w2 = np.random.randn(output_size, hidden_layer)
+        self.b2 = np.random.randn(output_size)
 
-    def forward_propagation(self, x):
-        pass
+    def forward_propagation(self, x: np.ndarray) -> np.ndarray:
+        self.z1 = self.linear_transformation(x=x,  weights=self.w1, bias=self.b1)
+        self.a1 = self.relu(x=self.z1)
+        return self.linear_transformation(x=self.a1, weights=self.w2, bias=self.b2)
 
     def backward_propagation(self, x, y):
+        # Once we implement loss we can do this
         pass
 
-    def linear_transformation(self, x):
-        pass
+    @staticmethod
+    def linear_transformation(x: np.ndarray, weights: np.ndarray, bias: np.ndarray) -> np.ndarray:
+        return np.dot(weights, x) + bias
 
-    def sigmoid(self, x):
-        pass
+    def relu(self, x: np.ndarray) -> np.ndarray:
+        return np.maximum(x, 0)
