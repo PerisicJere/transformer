@@ -1,8 +1,6 @@
 import numpy as np
 
-from model.linear import Linear
 from model.multi_head_attention import MultiHeadAttention
-from model.scaled_dot_product_attention import ScaledDotProductAttention
 
 
 def test_multi_head_attention():

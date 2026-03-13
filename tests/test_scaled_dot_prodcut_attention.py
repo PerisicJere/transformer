@@ -1,5 +1,7 @@
-from model.scaled_dot_product_attention import ScaledDotProductAttention
 import numpy as np
+
+from model.scaled_dot_product_attention import ScaledDotProductAttention
+
 
 def test_scaled_dot_product_attention__forward():
     Q = np.random.randn(10, 64)
