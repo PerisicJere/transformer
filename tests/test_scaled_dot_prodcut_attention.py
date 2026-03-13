@@ -5,7 +5,7 @@ def test_scaled_dot_product_attention__forward():
     Q = np.random.randn(10, 64)
     K = np.random.randn(10, 64)
     V = np.random.randn(10, 64)
-    attention = ScaledDotProductAttention(d_k=len(K))
+    attention = ScaledDotProductAttention(d_k=K.shape[-1])
     result = attention.forward(Q=Q, K=K, V=V)
 
     assert result.shape == (10, 64)
