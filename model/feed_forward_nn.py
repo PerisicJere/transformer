@@ -4,9 +4,9 @@ class FeedForwardNN:
     def __init__(self, input_size: int, output_size: int, hidden_layer: int):
         self.z1 = None
         self.a1 = None
-        self.w1 = np.random.randn(hidden_layer, input_size)
+        self.w1 = np.random.randn(input_size, hidden_layer)
         self.b1 = np.random.randn(hidden_layer)
-        self.w2 = np.random.randn(output_size, hidden_layer)
+        self.w2 = np.random.randn(hidden_layer, output_size)
         self.b2 = np.random.randn(output_size)
 
     def forward_propagation(self, x: np.ndarray) -> np.ndarray:
@@ -20,7 +20,8 @@ class FeedForwardNN:
 
     @staticmethod
     def linear_transformation(x: np.ndarray, weights: np.ndarray, bias: np.ndarray) -> np.ndarray:
-        return np.dot(weights, x) + bias
+        return np.dot(x, weights) + bias
 
-    def relu(self, x: np.ndarray) -> np.ndarray:
+    @staticmethod
+    def relu(x: np.ndarray) -> np.ndarray:
         return np.maximum(x, 0)

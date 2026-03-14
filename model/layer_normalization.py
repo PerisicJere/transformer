@@ -14,9 +14,5 @@ class LayerNormalization:
 
         normalized: np.ndarray = (x - mean) / (np.sqrt(variance + self.epsilon))
 
-        layer_norm: list[float] = []
-        for i in range(self.d_model):
-            layer_norm.append(self.gamma[i] * normalized[i] + self.beta[i])
+        return self.gamma * normalized + self.beta
 
-        layer_norm: np.ndarray = np.array(layer_norm, dtype=np.float32)
-        return layer_norm
