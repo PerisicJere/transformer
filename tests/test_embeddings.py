@@ -1,5 +1,3 @@
-import numpy as np
-
 from model.embedding import Embedding
 
 
@@ -16,7 +14,4 @@ def test_embeddings():
         embed.add_mapping(token)
 
     # Vector for Attention
-
     assert len(embed.get_embedding_vector("Attention")) == 4
-
-
