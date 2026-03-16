@@ -9,7 +9,7 @@ def test_encoder():
     tokens: set[str] = {'Transformer', 'Attention', 'FeedForward', 'Transformer'}
     embedding = Embedding(vocab_size=len(tokens), embedding_size=12)
     # d_model == len(embedding.embedding_weights)
-    pse = PositionalEncoding(vector=embedding.embedding_weights, d_model=3)()
+    pse = PositionalEncoding(d_model=3)(embeddings=embedding.embedding_weights)
 
     encoders = [Encoder(in_dim=pse.shape[1]) for _ in range(6)]
     x = encoders[0].forward(pse)
