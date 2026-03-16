@@ -11,6 +11,7 @@ class Encoder:
             in_dim=in_dim,
             out_dim=in_dim,
             num_heads=8,
+            mask=False
         )
         self.layer_norm1 = LayerNormalization(d_model=in_dim)
         self.layer_norm2 = LayerNormalization(d_model=in_dim)

@@ -11,12 +11,13 @@ class Decoder:
             in_dim=in_dim,
             out_dim=in_dim,
             num_heads=8,
-            # mask=None
+            mask=True
         )
         self.multi_head_attention = MultiHeadAttention(
             in_dim=in_dim,
             out_dim=in_dim,
             num_heads=8,
+            mask=False
         )
 
         self.layer_norm1 = LayerNormalization(d_model=in_dim)
