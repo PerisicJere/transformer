@@ -7,7 +7,7 @@ from model.scaled_dot_product_attention import ScaledDotProductAttention
 class MultiHeadAttention:
     def __init__(self, in_dim: int, out_dim: int, num_heads: int):
         self.num_heads = num_heads
-        self.attention = ScaledDotProductAttention(d_k=out_dim)
+        self.attention = ScaledDotProductAttention(d_k=out_dim, num_heads=num_heads)
         self.head_projections = [
             (Linear(in_dim=in_dim, out_dim=out_dim),
             Linear(in_dim=in_dim, out_dim=out_dim),
