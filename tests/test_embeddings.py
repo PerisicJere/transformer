@@ -2,16 +2,12 @@ from model.embedding import Embedding
 
 
 def test_embeddings():
-    tokens: set[str] = {'Transformer', 'Attention', 'FeedForward', 'Transformer'}
-    embed = Embedding(vocab_size=len(tokens), embedding_size=4)
+    tokens: list[str] = ['Transformer', 'Attention', 'FeedForward', 'Transformer']
+    embed = Embedding(vocab_size=len(set(tokens)), embedding_size=4)
 
-    for token in tokens:
-        embed.add_mapping(token)
+    embed.add_mapping(tokens)
 
     assert len(embed.embedding_weights) == len(embed.mappings)
 
-    for token in tokens:
-        embed.add_mapping(token)
-
     # Vector for Attention
-    assert len(embed.get_embedding_vector("Attention")) == 4
+    assert len(embed.get_embedding_vector('Transformer')) == 4
