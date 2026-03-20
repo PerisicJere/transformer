@@ -58,4 +58,6 @@ class Decoder:
         return third_layer_norm
 
     def backward(self, gradients: np.ndarray) -> None:
-        self.ffnn.backward_propagation(gradients)
+        layer_norm_3__backprop_output = self.layer_norm3.backward(gradients=gradients)
+        ffnn__backprop_output = self.ffnn.backward_propagation(gradients=layer_norm_3__backprop_output)
+        print(ffnn__backprop_output)
