@@ -3,15 +3,37 @@ import numpy as np
 
 class ScaledDotProductAttention:
     def __init__(self, d_k: int, num_heads: int, mask: bool) -> None:
+        self.Q, self.K, self.V, self.attention_weights = None, None, None, None
         self.scale: int = np.sqrt(d_k / num_heads)
         self.mask = mask
 
     def forward(self, Q: np.ndarray, K: np.ndarray, V: np.ndarray) -> np.ndarray:
-        raw_attention_scores: np.ndarray = np.matmul(Q, K.T)
+        self.Q, self.K, self.V = Q, K, V
+        raw_attention_scores: np.ndarray = np.matmul(Q, K.T) / self.scale
+
         if self.mask:
             masked: np.ndarray = self.__get_mask(raw_attention_scores.shape)
-            return np.matmul(self._softmax((raw_attention_scores + masked) / self.scale), V)
-        return np.matmul(self._softmax(raw_attention_scores / self.scale), V)
+            raw_attention_scores = (raw_attention_scores + masked)
+
+        self.attention_weights = self._softmax(raw_attention_scores)
+        return np.matmul(self.attention_weights, V)
+
+    def backward(self, gradients: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        dV = self.attention_weights.T.dot(gradients)
+        dS = self._softmax_backward(gradients)
+
+        dQ = np.matmul(dS, self.K) / self.scale
+        dK = np.matmul(dS.T, self.Q) / self.scale
+
+        return dQ, dK, dV
+
+    def _softmax_backward(self, gradients: np.ndarray) -> np.ndarray:
+        dP = gradients.dot(self.V.T)
+        O = np.matmul(self.attention_weights, self.V)
+        row_sum = (gradients * O).sum(axis=1, keepdims=True)
+        dS = (dP * self.attention_weights) - (row_sum * self.attention_weights)
+
+        return dS
 
     def _softmax(self, x: np.ndarray) -> np.ndarray:
         max_val = np.max(x, axis=-1, keepdims=True)

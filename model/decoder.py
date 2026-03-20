@@ -52,12 +52,25 @@ class Decoder:
 
         # Third layer
         feed_forward = self.ffnn.forward_propagation(second_layer_norm)
-        feed_forward_residual = layer_norm + feed_forward
+        feed_forward_residual = second_layer_norm + feed_forward
         third_layer_norm = self.layer_norm3.normalize(feed_forward_residual)
 
         return third_layer_norm
 
-    def backward(self, gradients: np.ndarray) -> None:
+    def backward(self, gradients: np.ndarray) -> np.ndarray:
+        # third
         layer_norm_3__backprop_output = self.layer_norm3.backward(gradients=gradients)
         ffnn__backprop_output = self.ffnn.backward_propagation(gradients=layer_norm_3__backprop_output)
-        print(ffnn__backprop_output)
+        residual_gradient_1  = layer_norm_3__backprop_output + ffnn__backprop_output
+
+        # second
+        layer_norm_2__backprop_output = self.layer_norm2.backward(gradients=ffnn__backprop_output)
+        multi_head_attention__backprop_output = self.multi_head_attention.backward(gradients=layer_norm_2__backprop_output)
+        residual_gradient_2 = multi_head_attention__backprop_output + layer_norm_2__backprop_output
+
+        # first
+        layer_norm_1__backprop_output = self.layer_norm1.backward(gradients=residual_gradient_2)
+        masked_multi_head_attention__backprop_output = self.masked_multi_head_attention.backward(gradients=layer_norm_1__backprop_output)
+        residual_gradient_3 = masked_multi_head_attention__backprop_output + layer_norm_1__backprop_output
+
+        return residual_gradient_3
