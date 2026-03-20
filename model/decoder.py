@@ -57,15 +57,15 @@ class Decoder:
 
         return third_layer_norm
 
-    def backward(self, gradients: np.ndarray) -> np.ndarray:
+    def backward(self, gradients: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         # third
         layer_norm_3__backprop_output = self.layer_norm3.backward(gradients=gradients)
         ffnn__backprop_output = self.ffnn.backward_propagation(gradients=layer_norm_3__backprop_output)
         residual_gradient_1  = layer_norm_3__backprop_output + ffnn__backprop_output
 
         # second
-        layer_norm_2__backprop_output = self.layer_norm2.backward(gradients=ffnn__backprop_output)
-        multi_head_attention__backprop_output = self.multi_head_attention.backward(gradients=layer_norm_2__backprop_output)
+        layer_norm_2__backprop_output = self.layer_norm2.backward(gradients=residual_gradient_1)
+        multi_head_attention__backprop_output, d_encoder = self.multi_head_attention.backward(gradients=layer_norm_2__backprop_output, encoder_input=True)
         residual_gradient_2 = multi_head_attention__backprop_output + layer_norm_2__backprop_output
 
         # first
@@ -73,4 +73,4 @@ class Decoder:
         masked_multi_head_attention__backprop_output = self.masked_multi_head_attention.backward(gradients=layer_norm_1__backprop_output)
         residual_gradient_3 = masked_multi_head_attention__backprop_output + layer_norm_1__backprop_output
 
-        return residual_gradient_3
+        return residual_gradient_3, d_encoder

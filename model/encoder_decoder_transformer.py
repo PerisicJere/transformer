@@ -25,6 +25,10 @@ class EncoderDecoderTransformer:
 
     def backward(self, probs: np.ndarray, targets: np.ndarray) -> None:
         gradients: np.ndarray = probs - targets
+        d_encoder = np.zeros_like(gradients)
         for decoder in self.decoders:
-            decoder.backward(gradients=gradients)
+            gradients, dx = decoder.backward(gradients=gradients)
+            d_encoder += dx
 
+        for encoder in self.encoders:
+            d_encoder = encoder.backward(gradients=d_encoder)

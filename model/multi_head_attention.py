@@ -28,13 +28,18 @@ class MultiHeadAttention:
         multi_head_attention = self.final_projection(concat)
         return multi_head_attention
 
-    def backward(self, gradients: np.ndarray) -> np.ndarray:
+    def backward(self, gradients: np.ndarray, encoder_input: bool = False) -> tuple[np.ndarray, np.ndarray] | np.ndarray:
         linear_backward = self.final_projection.backward(gradients=gradients)
         heads = np.split(linear_backward, self.num_heads, axis=1)
         dx: np.ndarray = np.zeros_like(heads[0])
+        dQx: np.ndarray = np.zeros_like(heads[0])
         for idx, weights in enumerate(self.head_projections):
             Wq, Wk, Wv, attention = weights
             dQi, dKi, dVi = attention.backward(gradients=heads[idx])
-            dx += Wq.backward(dQi) + Wk.backward(dKi) + Wv.backward(dVi)
+            if encoder_input:
+                dQx += Wq.backward(dQi)
+                dx += Wk.backward(dKi) + Wv.backward(dVi)
+            else:
+                dx += Wq.backward(dQi) + Wk.backward(dKi) + Wv.backward(dVi)
 
-        return dx
+        return (dx, dQx) if encoder_input else dx
