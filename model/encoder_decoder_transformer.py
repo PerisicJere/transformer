@@ -22,3 +22,9 @@ class EncoderDecoderTransformer:
             decoder_output = decoder.forward(x=decoder_output, Q_encoder=encoder_output, K_encoder=encoder_output)
 
         return decoder_output
+
+    def backward(self, probs: np.ndarray, targets: np.ndarray) -> None:
+        gradients: np.ndarray = probs - targets
+        for decoder in self.decoders:
+            decoder.backward(gradients=gradients)
+

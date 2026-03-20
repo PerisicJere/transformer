@@ -30,7 +30,8 @@ def test_attention_backprop():
     lin = Linear(in_dim=4, out_dim=4)(output)
     probs = softmax(x=lin)
 
-    print(probs - targets)
+    transformer.backward(probs=probs, targets=targets)
+    # print(probs - targets)
 
     # loss = CrossEntropyLoss()
     # loss = loss.compute(targets=, probabilities=probs)

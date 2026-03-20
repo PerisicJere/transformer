@@ -53,6 +53,9 @@ class Decoder:
         # Third layer
         feed_forward = self.ffnn.forward_propagation(second_layer_norm)
         feed_forward_residual = layer_norm + feed_forward
-        third_layer_norm = self.layer_norm2.normalize(feed_forward_residual)
+        third_layer_norm = self.layer_norm3.normalize(feed_forward_residual)
 
         return third_layer_norm
+
+    def backward(self, gradients: np.ndarray) -> None:
+        self.ffnn.backward_propagation(gradients)
