@@ -16,7 +16,7 @@ class FeedForwardNN:
         self.a1 = self.relu(x=self.z1)
         return self.linear_transformation(x=self.a1, weights=self.w2, bias=self.b2)
 
-    def backward_propagation(self, gradients: np.ndarray) -> None:
+    def backward_propagation(self, gradients: np.ndarray) -> np.ndarray:
         # Once we implement loss we can do this
 
         da1 = gradients.dot(self.w2.T)
@@ -27,10 +27,14 @@ class FeedForwardNN:
         dw2 = self.a1.T.dot(gradients)
         db2 = gradients.sum(axis=0)
 
+        dx = dz1.dot(self.w1.T)
+
         self.w1 -= dw1 * 0.001
         self.b1 -= db1 * 0.001
         self.w2 -= dw2 * 0.001
         self.b2 -= db2 * 0.001
+
+        return dx
 
     @staticmethod
     def linear_transformation(x: np.ndarray, weights: np.ndarray, bias: np.ndarray) -> np.ndarray:
