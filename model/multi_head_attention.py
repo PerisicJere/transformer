@@ -28,8 +28,8 @@ class MultiHeadAttention:
         multi_head_attention = self.final_projection(concat)
         return multi_head_attention
 
-    def backward(self, gradients: np.ndarray, encoder_input: bool = False) -> tuple[np.ndarray, np.ndarray] | np.ndarray:
-        linear_backward = self.final_projection.backward(gradients=gradients)
+    def backward(self, gradients: np.ndarray, learning_rate: np.float32, encoder_input: bool = False) -> tuple[np.ndarray, np.ndarray] | np.ndarray:
+        linear_backward = self.final_projection.backward(gradients=gradients, learning_rate=learning_rate)
         heads = np.split(linear_backward, self.num_heads, axis=1)
         dx: np.ndarray = np.zeros_like(heads[0])
         dQx: np.ndarray = np.zeros_like(heads[0])
@@ -37,10 +37,14 @@ class MultiHeadAttention:
             Wq, Wk, Wv, attention = weights
             dQi, dKi, dVi = attention.backward(gradients=heads[idx])
             if encoder_input:
-                dQx += Wq.backward(dQi)
-                dx += (Wk.backward(dKi) + Wv.backward(dVi))
+                dQx += Wq.backward(dQi, learning_rate=learning_rate)
+                dx += (Wk.backward(dKi, learning_rate=learning_rate) + Wv.backward(dVi, learning_rate=learning_rate))
             else:
-                dx += (Wq.backward(dQi) + Wk.backward(dKi) + Wv.backward(dVi))
+                dx += (
+                        Wq.backward(dQi, learning_rate=learning_rate)
+                        + Wk.backward(dKi, learning_rate=learning_rate)
+                        + Wv.backward(dVi, learning_rate=learning_rate)
+                )
 
         dx = np.clip(dx, -1, 1)
         dQx = np.clip(dQx, -1, 1)

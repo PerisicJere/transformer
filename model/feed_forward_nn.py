@@ -14,7 +14,7 @@ class FeedForwardNN:
         self.a1 = self.relu(x=self.z1)
         return self.linear_transformation(x=self.a1, weights=self.w2, bias=self.b2)
 
-    def backward_propagation(self, gradients: np.ndarray) -> np.ndarray:
+    def backward_propagation(self, gradients: np.ndarray, learning_rate: np.float32) -> np.ndarray:
         da1 = gradients.dot(self.w2.T)
         dz1 = da1 * (self.z1 > 0)
         dw1 = self.x.T.dot(dz1)
@@ -25,10 +25,10 @@ class FeedForwardNN:
 
         dx = dz1.dot(self.w1.T)
 
-        self.w1 -= np.clip(dw1, -1, 1) * 0.001
-        self.b1 -= np.clip(db1, -1, 1) * 0.001
-        self.w2 -= np.clip(dw2, -1, 1) * 0.001
-        self.b2 -= np.clip(db2, -1, 1) * 0.001
+        self.w1 -= np.clip(dw1, -1, 1) * learning_rate
+        self.b1 -= np.clip(db1, -1, 1) * learning_rate
+        self.w2 -= np.clip(dw2, -1, 1) * learning_rate
+        self.b2 -= np.clip(db2, -1, 1) * learning_rate
 
         return np.clip(dx, -1, 1)
 

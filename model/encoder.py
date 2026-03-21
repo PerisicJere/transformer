@@ -34,15 +34,15 @@ class Encoder:
 
         return second_layer_norm
 
-    def backward(self, gradients: np.ndarray) -> np.ndarray:
+    def backward(self, gradients: np.ndarray, learning_rate: np.float32) -> np.ndarray:
         # second block
-        layer_norm_2__backprop_output = self.layer_norm2.backward(gradients=gradients)
-        ffnn__backprop_output = self.ffnn.backward_propagation(gradients=layer_norm_2__backprop_output)
+        layer_norm_2__backprop_output = self.layer_norm2.backward(gradients=gradients, learning_rate=learning_rate)
+        ffnn__backprop_output = self.ffnn.backward_propagation(gradients=layer_norm_2__backprop_output, learning_rate=learning_rate)
         residual_gradient_1 = layer_norm_2__backprop_output + ffnn__backprop_output
 
         # first block
-        layer_norm_1__backprop_output = self.layer_norm1.backward(gradients=residual_gradient_1)
-        multi_head_attention__backprop_output = self.multi_head_attention.backward(gradients=layer_norm_1__backprop_output)
+        layer_norm_1__backprop_output = self.layer_norm1.backward(gradients=residual_gradient_1, learning_rate=learning_rate)
+        multi_head_attention__backprop_output = self.multi_head_attention.backward(gradients=layer_norm_1__backprop_output, learning_rate=learning_rate)
         residual_gradient_2 = multi_head_attention__backprop_output + layer_norm_1__backprop_output
 
         return residual_gradient_2

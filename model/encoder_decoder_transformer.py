@@ -27,17 +27,18 @@ class EncoderDecoderTransformer:
     def backward(
             self,
             probs: np.ndarray,
-            targets: np.ndarray
+            targets: np.ndarray,
+            learning_rate: np.float32
     ) -> tuple[np.ndarray, np.ndarray]:
         d_decoder: np.ndarray = probs - targets
         d_encoder = np.zeros_like(d_decoder)
 
         for decoder in self.decoders:
             # print(f"{d_decoder=}")
-            d_decoder, dx = decoder.backward(gradients=d_decoder)
+            d_decoder, dx = decoder.backward(gradients=d_decoder, learning_rate=learning_rate)
             d_encoder += dx
 
         for encoder in self.encoders:
-            d_encoder = encoder.backward(gradients=d_encoder)
+            d_encoder = encoder.backward(gradients=d_encoder, learning_rate=learning_rate)
 
         return d_decoder, d_encoder

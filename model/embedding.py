@@ -37,6 +37,6 @@ class Embedding:
     def get_embedding_vector(self, token: str) -> np.ndarray:
         return self.embedding_weights[self.__get_token_id(token)]
 
-    def backward(self, gradients: np.ndarray, target_indices: np.ndarray) -> None:
+    def backward(self, gradients: np.ndarray, target_indices: np.ndarray, learning_rate: np.float32) -> None:
         for i, token_idx in enumerate(target_indices):
-            self.embedding_weights[token_idx] -= 0.001 * np.clip(gradients[i], -1, 1)
+            self.embedding_weights[token_idx] -= learning_rate * np.clip(gradients[i], -1, 1)

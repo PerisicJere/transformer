@@ -8,6 +8,7 @@ from model.positional_encoding import PositionalEncoding
 
 EMBEDDING_DIM = 4
 
+
 def test_attention_backprop():
     cro_list: list[str] = ['Ja', 'Sam', 'Jere', 'Perisic', 'Ja']
     eng_list: list[str] = ['I', 'Am', 'Jere', 'Perisic', 'I']
@@ -32,14 +33,18 @@ def test_attention_backprop():
     gradients_decoder, gradients_encoder = transformer.backward(
         probs=probs,
         targets=targets,
+        learning_rate=np.float32(0.001)
     )
-    cro_embedding.backward(gradients=gradients_encoder, target_indices=cro_embedding.get_list_of_token_ids(cro_list))
-    eng_embedding.backward(gradients=gradients_decoder, target_indices=eng_embedding.get_list_of_token_ids(eng_list))
+    cro_embedding.backward(gradients=gradients_encoder, target_indices=cro_embedding.get_list_of_token_ids(cro_list),
+                           learning_rate=np.float32(0.001))
+    eng_embedding.backward(gradients=gradients_decoder, target_indices=eng_embedding.get_list_of_token_ids(eng_list),
+                           learning_rate=np.float32(0.001))
 
     loss = CrossEntropyLoss()
     loss = loss.compute(targets=cro_embedding.get_list_of_token_ids(cro_list), probabilities=probs)
 
     assert type(loss) == np.float64
+
 
 def softmax(x: np.ndarray) -> np.ndarray:
     max_val = np.max(x, axis=-1, keepdims=True)

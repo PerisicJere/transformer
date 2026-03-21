@@ -18,7 +18,7 @@ class LayerNormalization:
 
         return self.gamma * self.normalized + self.beta
 
-    def backward(self, gradients: np.ndarray) -> np.ndarray:
+    def backward(self, gradients: np.ndarray, learning_rate: np.float32) -> np.ndarray:
 
         d_beta = gradients.sum(axis=0)
         d_gamma = (gradients * self.normalized).sum(axis=0)
@@ -31,8 +31,8 @@ class LayerNormalization:
 
         dx = dx / np.sqrt(self.variance + self.epsilon) + d_variance * 2*(self.x - self.mean) / self.d_model + d_mean / self.d_model
 
-        self.beta -= np.clip(d_beta, -1, 1) * 0.001
-        self.gamma -= np.clip(d_gamma, -1, 1) * 0.001
+        self.beta -= np.clip(d_beta, -1, 1) * learning_rate
+        self.gamma -= np.clip(d_gamma, -1, 1) * learning_rate
 
         return np.clip(dx, -1, 1)
 

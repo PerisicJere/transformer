@@ -9,11 +9,11 @@ class Linear:
         self.x = x
         return np.matmul(x, self.linear)
 
-    def backward(self, gradients: np.ndarray) -> np.ndarray:
+    def backward(self, gradients: np.ndarray, learning_rate: np.float32) -> np.ndarray:
 
         dw1 = self.x.T.dot(gradients)
         dx = gradients.dot(dw1.T)
 
-        self.linear -= np.clip(dw1, -1, 1) * 0.001
+        self.linear -= np.clip(dw1, -1, 1) * learning_rate
 
         return np.clip(dx, -1, 1)
