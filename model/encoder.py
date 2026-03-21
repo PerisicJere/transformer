@@ -21,9 +21,9 @@ class Encoder:
             hidden_layer=8
         )
 
-    def forward(self, x: np.ndarray) -> np.ndarray:
+    def forward(self, x: np.ndarray, src_pad_mask: np.ndarray) -> np.ndarray:
         # first block
-        multi_head_attention = self.multi_head_attention(Q=x, K=x, V=x)
+        multi_head_attention = self.multi_head_attention(Q=x, K=x, V=x, pad_mask=src_pad_mask)
         multi_head_residual = x + multi_head_attention
         layer_norm = self.layer_norm1.normalize(multi_head_residual)
 

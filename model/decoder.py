@@ -31,21 +31,23 @@ class Decoder:
         )
 
 
-    def forward(self, x: np.ndarray, Q_encoder: np.ndarray, K_encoder: np.ndarray) -> np.ndarray:
+    def forward(self, x: np.ndarray, K_encoder: np.ndarray, V_encoder: np.ndarray, target_pad_mask: np.ndarray, src_pad_mask: np.ndarray) -> np.ndarray:
         # First layer
         masked_multi_head_attention = self.masked_multi_head_attention(
             Q=x,
             K=x,
-            V=x
+            V=x,
+            pad_mask=target_pad_mask
         )
         masked_multi_head_residual = x + masked_multi_head_attention
         layer_norm = self.layer_norm1.normalize(masked_multi_head_residual)
 
         # Second layer
         multi_head_attention = self.multi_head_attention(
-            Q=Q_encoder,
+            Q=layer_norm,
             K=K_encoder,
-            V=layer_norm
+            V=V_encoder,
+            pad_mask=src_pad_mask
         )
         multi_head_residual = layer_norm + multi_head_attention
         second_layer_norm = self.layer_norm2.normalize(multi_head_residual)
@@ -65,7 +67,7 @@ class Decoder:
 
         # second
         layer_norm_2__backprop_output = self.layer_norm2.backward(gradients=residual_gradient_1, learning_rate=learning_rate)
-        multi_head_attention__backprop_output, d_encoder = self.multi_head_attention.backward(gradients=layer_norm_2__backprop_output, learning_rate=learning_rate ,encoder_input=True)
+        multi_head_attention__backprop_output, d_encoder = self.multi_head_attention.backward(gradients=layer_norm_2__backprop_output, learning_rate=learning_rate, encoder_input=True)
         residual_gradient_2 = multi_head_attention__backprop_output + layer_norm_2__backprop_output
 
         # first

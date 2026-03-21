@@ -21,7 +21,7 @@ class Embedding:
         return embedding_rows
 
     def get_targets(self, tokens: list[str]) -> np.ndarray:
-        targets: np.ndarray = np.zeros((len(tokens), self.embedding_size))
+        targets: np.ndarray = np.zeros((len(tokens), self.vocab_size))
         for idx, token in enumerate(tokens):
             token_idx = self.mappings[token]
             targets[idx][token_idx] = 1.0
