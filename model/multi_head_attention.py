@@ -38,8 +38,10 @@ class MultiHeadAttention:
             dQi, dKi, dVi = attention.backward(gradients=heads[idx])
             if encoder_input:
                 dQx += Wq.backward(dQi)
-                dx += Wk.backward(dKi) + Wv.backward(dVi)
+                dx += (Wk.backward(dKi) + Wv.backward(dVi))
             else:
-                dx += Wq.backward(dQi) + Wk.backward(dKi) + Wv.backward(dVi)
+                dx += (Wq.backward(dQi) + Wk.backward(dKi) + Wv.backward(dVi))
 
+        dx = np.clip(dx, -1, 1)
+        dQx = np.clip(dQx, -1, 1)
         return (dx, dQx) if encoder_input else dx

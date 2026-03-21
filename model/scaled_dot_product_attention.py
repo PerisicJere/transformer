@@ -25,13 +25,14 @@ class ScaledDotProductAttention:
         dQ = np.matmul(dS, self.K) / self.scale
         dK = np.matmul(dS.T, self.Q) / self.scale
 
-        return dQ, dK, dV
+        return np.clip(dQ, -1, 1), np.clip(dK, -1, 1), np.clip(dV, -1, 1)
 
     def _softmax_backward(self, gradients: np.ndarray) -> np.ndarray:
-        dP = gradients.dot(self.V.T)
-        O = np.matmul(self.attention_weights, self.V)
-        row_sum = (gradients * O).sum(axis=1, keepdims=True)
-        dS = (dP * self.attention_weights) - (row_sum * self.attention_weights)
+        dP: np.ndarray = gradients.dot(self.V.T)
+        O: np.ndarray = np.matmul(self.attention_weights, self.V)
+        row_sum: np.ndarray = (gradients * O).sum(axis=1, keepdims=True)
+
+        dS: np.ndarray = (dP * self.attention_weights) - (row_sum * self.attention_weights)
 
         return dS
 

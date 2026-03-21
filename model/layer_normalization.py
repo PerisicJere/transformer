@@ -6,8 +6,8 @@ class LayerNormalization:
         self.x, self.normalized, self.mean, self.variance = None, None, None, None
         self.epsilon = epsilon
         self.d_model = d_model
-        self.beta = np.full(shape=d_model, fill_value=.5)
-        self.gamma = np.full(shape=d_model, fill_value=1.5)
+        self.beta = np.zeros(d_model)
+        self.gamma = np.ones(d_model)
 
     def normalize(self, x: np.ndarray) -> np.ndarray:
         self.x = x
@@ -31,10 +31,10 @@ class LayerNormalization:
 
         dx = dx / np.sqrt(self.variance + self.epsilon) + d_variance * 2*(self.x - self.mean) / self.d_model + d_mean / self.d_model
 
-        self.beta -= d_beta * 0.001
-        self.gamma -= d_gamma * 0.001
+        self.beta -= np.clip(d_beta, -1, 1) * 0.001
+        self.gamma -= np.clip(d_gamma, -1, 1) * 0.001
 
-        return dx
+        return np.clip(dx, -1, 1)
 
 
 

@@ -1,6 +1,7 @@
 import numpy as np
 
 from model.decoder import Decoder
+from model.embedding import Embedding
 from model.encoder import Encoder
 from model.linear import Linear
 
@@ -23,12 +24,20 @@ class EncoderDecoderTransformer:
 
         return decoder_output
 
-    def backward(self, probs: np.ndarray, targets: np.ndarray) -> None:
-        gradients: np.ndarray = probs - targets
-        d_encoder = np.zeros_like(gradients)
+    def backward(
+            self,
+            probs: np.ndarray,
+            targets: np.ndarray
+    ) -> tuple[np.ndarray, np.ndarray]:
+        d_decoder: np.ndarray = probs - targets
+        d_encoder = np.zeros_like(d_decoder)
+
         for decoder in self.decoders:
-            gradients, dx = decoder.backward(gradients=gradients)
+            # print(f"{d_decoder=}")
+            d_decoder, dx = decoder.backward(gradients=d_decoder)
             d_encoder += dx
 
         for encoder in self.encoders:
             d_encoder = encoder.backward(gradients=d_encoder)
+
+        return d_decoder, d_encoder

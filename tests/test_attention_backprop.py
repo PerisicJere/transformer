@@ -1,11 +1,9 @@
 import numpy as np
 
-from model.cross_entropy_loss import CrossEntropyLoss
 from model.embedding import Embedding
 from model.encoder_decoder_transformer import EncoderDecoderTransformer
 from model.linear import Linear
 from model.positional_encoding import PositionalEncoding
-from model.scaled_dot_product_attention import ScaledDotProductAttention
 
 EMBEDDING_DIM = 4
 
@@ -30,8 +28,11 @@ def test_attention_backprop():
     lin = Linear(in_dim=4, out_dim=4)(output)
     probs = softmax(x=lin)
 
-    transformer.backward(probs=probs, targets=targets)
-    # print(probs - targets)
+    gradients_decoder, gradients_encoder = transformer.backward(
+        probs=probs,
+        targets=targets,
+    )
+    print(f"{gradients_encoder=}, {gradients_decoder=}")
 
     # loss = CrossEntropyLoss()
     # loss = loss.compute(targets=, probabilities=probs)

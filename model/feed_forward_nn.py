@@ -2,13 +2,11 @@ import numpy as np
 
 class FeedForwardNN:
     def __init__(self, input_size: int, output_size: int, hidden_layer: int):
-        self.x = None
-        self.z1 = None
-        self.a1 = None
-        self.w1 = np.random.randn(input_size, hidden_layer)
-        self.b1 = np.random.randn(hidden_layer)
-        self.w2 = np.random.randn(hidden_layer, output_size)
-        self.b2 = np.random.randn(output_size)
+        self.x, self.z1, self.a1 = None, None, None
+        self.w1 = np.random.randn(input_size, hidden_layer) * np.sqrt(2 / input_size)
+        self.b1 = np.random.randn(hidden_layer) * np.sqrt(2 / hidden_layer)
+        self.w2 = np.random.randn(hidden_layer, output_size) * np.sqrt(2 / hidden_layer)
+        self.b2 = np.random.randn(output_size) * np.sqrt(2 / output_size)
 
     def forward_propagation(self, x: np.ndarray) -> np.ndarray:
         self.x = x
@@ -17,8 +15,6 @@ class FeedForwardNN:
         return self.linear_transformation(x=self.a1, weights=self.w2, bias=self.b2)
 
     def backward_propagation(self, gradients: np.ndarray) -> np.ndarray:
-        # Once we implement loss we can do this
-
         da1 = gradients.dot(self.w2.T)
         dz1 = da1 * (self.z1 > 0)
         dw1 = self.x.T.dot(dz1)
@@ -29,12 +25,12 @@ class FeedForwardNN:
 
         dx = dz1.dot(self.w1.T)
 
-        self.w1 -= dw1 * 0.001
-        self.b1 -= db1 * 0.001
-        self.w2 -= dw2 * 0.001
-        self.b2 -= db2 * 0.001
+        self.w1 -= np.clip(dw1, -1, 1) * 0.001
+        self.b1 -= np.clip(db1, -1, 1) * 0.001
+        self.w2 -= np.clip(dw2, -1, 1) * 0.001
+        self.b2 -= np.clip(db2, -1, 1) * 0.001
 
-        return dx
+        return np.clip(dx, -1, 1)
 
     @staticmethod
     def linear_transformation(x: np.ndarray, weights: np.ndarray, bias: np.ndarray) -> np.ndarray:

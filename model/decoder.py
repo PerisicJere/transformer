@@ -73,4 +73,4 @@ class Decoder:
         masked_multi_head_attention__backprop_output = self.masked_multi_head_attention.backward(gradients=layer_norm_1__backprop_output)
         residual_gradient_3 = masked_multi_head_attention__backprop_output + layer_norm_1__backprop_output
 
-        return residual_gradient_3, d_encoder
+        return np.clip(residual_gradient_3, -1, 1), np.clip(d_encoder, -1, 1)
