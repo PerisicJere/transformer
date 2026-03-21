@@ -1,5 +1,6 @@
 import numpy as np
 
+from model.cross_entropy_loss import CrossEntropyLoss
 from model.embedding import Embedding
 from model.encoder_decoder_transformer import EncoderDecoderTransformer
 from model.linear import Linear
@@ -35,10 +36,10 @@ def test_attention_backprop():
     cro_embedding.backward(gradients=gradients_encoder, target_indices=cro_embedding.get_list_of_token_ids(cro_list))
     eng_embedding.backward(gradients=gradients_decoder, target_indices=eng_embedding.get_list_of_token_ids(eng_list))
 
-    # loss = CrossEntropyLoss()
-    # loss = loss.compute(targets=, probabilities=probs)
-    assert 1 != 1
+    loss = CrossEntropyLoss()
+    loss = loss.compute(targets=cro_embedding.get_list_of_token_ids(cro_list), probabilities=probs)
 
+    assert type(loss) == np.float64
 
 def softmax(x: np.ndarray) -> np.ndarray:
     max_val = np.max(x, axis=-1, keepdims=True)
