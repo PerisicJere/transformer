@@ -32,7 +32,8 @@ def test_attention_backprop():
         probs=probs,
         targets=targets,
     )
-    print(f"{gradients_encoder=}, {gradients_decoder=}")
+    cro_embedding.backward(gradients=gradients_encoder, target_indices=cro_embedding.get_list_of_token_ids(cro_list))
+    eng_embedding.backward(gradients=gradients_decoder, target_indices=eng_embedding.get_list_of_token_ids(eng_list))
 
     # loss = CrossEntropyLoss()
     # loss = loss.compute(targets=, probabilities=probs)
