@@ -61,12 +61,10 @@ class EncoderDecoderTransformer:
     def translate(self, encoder_input: np.ndarray, decoder_input: np.ndarray) -> np.ndarray:
         encoder_output = self.encoders[0].forward(
             x=encoder_input,
-            src_pad_mask=None
         )
         for encoder in self.encoders[1:]:
             encoder_output = encoder.forward(
                 x=encoder_output,
-                src_pad_mask=None
             )
 
         # decoder
@@ -74,16 +72,12 @@ class EncoderDecoderTransformer:
             x=decoder_input,
             K_encoder=encoder_output,
             V_encoder=encoder_output,
-            target_pad_mask=None,
-            src_pad_mask=None
         )
         for decoder in self.decoders[1:]:
             decoder_output = decoder.forward(
                 x=decoder_output,
                 K_encoder=encoder_output,
                 V_encoder=encoder_output,
-                target_pad_mask=None,
-                src_pad_mask=None
             )
 
         return decoder_output
