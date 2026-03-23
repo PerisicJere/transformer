@@ -31,13 +31,12 @@ class Decoder:
         )
 
 
-    def forward(self, x: np.ndarray, K_encoder: np.ndarray, V_encoder: np.ndarray, target_pad_mask: np.ndarray | None, src_pad_mask: np.ndarray | None) -> np.ndarray:
+    def forward(self, x: np.ndarray, K_encoder: np.ndarray, V_encoder: np.ndarray) -> np.ndarray:
         # First layer
         masked_multi_head_attention = self.masked_multi_head_attention(
             Q=x,
             K=x,
             V=x,
-            pad_mask=target_pad_mask
         )
         masked_multi_head_residual = x + masked_multi_head_attention
         layer_norm = self.layer_norm1.normalize(masked_multi_head_residual)
@@ -47,7 +46,6 @@ class Decoder:
             Q=layer_norm,
             K=K_encoder,
             V=V_encoder,
-            pad_mask=src_pad_mask
         )
         multi_head_residual = layer_norm + multi_head_attention
         second_layer_norm = self.layer_norm2.normalize(multi_head_residual)

@@ -16,6 +16,30 @@ from model.softmax import softmax
 
 _STRING_CLEAN: Final = re.compile(r'[^\w\s]')
 
+def translate(transformer: EncoderDecoderTransformer, hrvatski: Embedding, engleski: Embedding):
+    sentence = ["<SOS>", "Ja", "sam", "student", "<EOS>"]
+    cro_pse = PositionalEncoding(d_model=EMBEDDING_DIM)(
+        embeddings=hrvatski.construct_table(tokens=sentence)
+    )
+    to_translate = ["<SOS>"]
+    while True:
+        eng_pse = PositionalEncoding(d_model=EMBEDDING_DIM)(
+            embeddings=engleski.construct_table(tokens=to_translate)
+        )
+        output = transformer.translate(encoder_input=cro_pse, decoder_input=eng_pse)
+        lin = linear(output)
+        probs = softmax(input=lin)
+        token_id: np.int32 = np.argmax(probs[-1])
+
+        translated = eng_embedding.get_embedding_key(token_id.astype(int))
+        to_translate.append(translated)
+
+        if translated == "<EOS>" or len(to_translate) > 7:
+            break
+
+    print(f"Croatian Sentence: {' '.join(sentence)}")
+    print(f"English Translation: {' '.join(to_translate)}")
+
 
 if __name__ == '__main__':
     df: DataFrame = pd.read_csv('data/EngCro.tsv', sep='\t')
@@ -23,12 +47,6 @@ if __name__ == '__main__':
                  .apply(lambda row: ["<SOS>"] + row + ["<EOS>"]))
     df['Cro'] = (df['Cro'].apply(lambda row: [re.sub(_STRING_CLEAN, '', token) for token in row.split(' ')])
                  .apply(lambda row: ["<SOS>"] + row + ["<EOS>"]))
-
-    max_eng_len = max(len(row) for row in df['Eng'])
-    max_cro_len = max(len(row) for row in df['Cro'])
-
-    df['Eng'] = df['Eng'].apply(lambda row: row + ["<PAD>"] * (max_eng_len - len(row)))
-    df['Cro'] = df['Cro'].apply(lambda row: row + ["<PAD>"] * (max_cro_len - len(row)))
 
     cro_set: set[str] = set()
     eng_set: set[str] = set()
@@ -41,9 +59,6 @@ if __name__ == '__main__':
 
     cro_embedding.add_mapping(list(cro_set))
     eng_embedding.add_mapping(list(eng_set))
-
-    eng_pad_idx = eng_embedding.get_list_of_token_ids(["<PAD>"])[0]
-    cro_pad_idx = cro_embedding.get_list_of_token_ids(["<PAD>"])[0]
 
     transformer_train = EncoderDecoderTransformer(
         decoder_layers=DECODER_LAYERS,
@@ -65,12 +80,6 @@ if __name__ == '__main__':
         df = df.sample(frac=1).reset_index(drop=True)
         for i, (croatian_input, english_input) in enumerate(zip(df['Cro'], df['Eng'])):
             targets: np.ndarray = eng_embedding.get_targets(english_input)
-            target_idx: np.ndarray = eng_embedding.get_list_of_token_ids(english_input)
-
-            target_pad_mask = np.where(target_idx == eng_pad_idx, -np.inf, 0.0).reshape(1, -1)
-
-            src_idx: np.ndarray = cro_embedding.get_list_of_token_ids(croatian_input)
-            src_pad_mask = np.where(src_idx == cro_pad_idx, -np.inf, 0.0).reshape(1, -1)
 
             cro_pse = PositionalEncoding(d_model=EMBEDDING_DIM)(
                 embeddings=cro_embedding.construct_table(tokens=croatian_input)
@@ -82,8 +91,6 @@ if __name__ == '__main__':
             output = transformer_train.forward(
                 encoder_embeddings=cro_pse,
                 decoder_embeddings=eng_pse,
-                src_pad_mask=src_pad_mask,
-                target_pad_mask=target_pad_mask
             )
             lin = linear(output)
             probs = softmax(input=lin)
@@ -111,29 +118,10 @@ if __name__ == '__main__':
             lr_new = ALPHA + 0.5*(LEARNING_RATE - ALPHA)*(1 + np.cos((np.pi * ((steps*epoch)+i)) / total_steps))
 
             pbar.set_description(f"Epoch {epoch} | Curr Loss: {float(loss_sum / len(df)):.4f} | Learning Rate: {float(lr_new):.20f} | Steps: {int((steps*epoch)+i)}/{int(total_steps)}")
+
+        if epoch % 10 == 0:
+            translate(transformer=transformer_train, hrvatski=cro_embedding, engleski=eng_embedding)
+
         losses.append(float(loss_sum / len(df)))
 
-    sentence = ["<SOS>", "Ja", "sam", "student", "<EOS>"]
-    cro_pse = PositionalEncoding(d_model=EMBEDDING_DIM)(
-        embeddings=cro_embedding.construct_table(tokens=sentence)
-    )
-    to_translate = ["<SOS>"]
-
-    while True:
-        eng_pse = PositionalEncoding(d_model=EMBEDDING_DIM)(
-            embeddings=eng_embedding.construct_table(tokens=to_translate)
-        )
-        output = transformer_train.translate(encoder_input=cro_pse, decoder_input=eng_pse)
-        lin = linear(output)
-        probs = softmax(input=lin)
-        token_id: np.int32 = np.argmax(probs)
-
-        translated = eng_embedding.get_embedding_key(token_id.astype(int))
-        to_translate.append(translated)
-
-        if translated == "<EOS>" or len(to_translate) > 7:
-            break
-
-    print(f"Croatian Sentence: {' '.join(sentence)}")
-    print(f"English Translation: {' '.join(to_translate)}")
     print(losses)

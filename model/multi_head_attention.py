@@ -16,13 +16,13 @@ class MultiHeadAttention:
         ]
         self.final_projection = Linear(in_dim=out_dim * num_heads, out_dim=in_dim)
 
-    def __call__(self, Q: np.ndarray, K: np.ndarray, V: np.ndarray, pad_mask: np.ndarray) -> np.ndarray:
+    def __call__(self, Q: np.ndarray, K: np.ndarray, V: np.ndarray) -> np.ndarray:
         heads: list[np.ndarray] = []
         for Wq, Wk, Wv, attention in self.head_projections:
             Qi = Wq(Q)
             Ki = Wk(K)
             Vi = Wv(V)
-            heads.append(attention.forward(Q=Qi, K=Ki, V=Vi, pad_mask=pad_mask))
+            heads.append(attention.forward(Q=Qi, K=Ki, V=Vi))
 
         concat = np.concatenate(heads, axis=1)
         multi_head_attention = self.final_projection(concat)

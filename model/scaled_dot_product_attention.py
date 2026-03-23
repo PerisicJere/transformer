@@ -7,16 +7,13 @@ class ScaledDotProductAttention:
         self.scale: int = np.sqrt(d_k / num_heads)
         self.mask = mask
 
-    def forward(self, Q: np.ndarray, K: np.ndarray, V: np.ndarray, pad_mask: np.ndarray | None) -> np.ndarray:
+    def forward(self, Q: np.ndarray, K: np.ndarray, V: np.ndarray) -> np.ndarray:
         self.Q, self.K, self.V = Q, K, V
         raw_attention_scores: np.ndarray = np.matmul(Q, K.T) / self.scale
 
         if self.mask:
             masked: np.ndarray = self.__get_mask(raw_attention_scores.shape)
             raw_attention_scores = (raw_attention_scores + masked)
-
-        if pad_mask is not None:
-            raw_attention_scores = raw_attention_scores + pad_mask
 
         self.attention_weights = self._softmax(raw_attention_scores)
         return np.matmul(self.attention_weights, V)

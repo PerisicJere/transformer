@@ -16,18 +16,14 @@ class EncoderDecoderTransformer:
     def forward(self,
                 encoder_embeddings: np.ndarray,
                 decoder_embeddings: np.ndarray,
-                src_pad_mask: np.ndarray,
-                target_pad_mask: np.ndarray,
                 ) -> np.ndarray:
         # encoder
         encoder_output = self.encoders[0].forward(
             x=encoder_embeddings,
-            src_pad_mask=src_pad_mask
         )
         for encoder in self.encoders[1:]:
             encoder_output = encoder.forward(
                 x=encoder_output,
-                src_pad_mask=src_pad_mask
             )
 
         # decoder
@@ -35,16 +31,12 @@ class EncoderDecoderTransformer:
             x=decoder_embeddings,
             K_encoder=encoder_output,
             V_encoder=encoder_output,
-            target_pad_mask=target_pad_mask,
-            src_pad_mask=src_pad_mask
         )
         for decoder in self.decoders[1:]:
             decoder_output = decoder.forward(
                 x=decoder_output,
                 K_encoder=encoder_output,
                 V_encoder=encoder_output,
-                target_pad_mask=target_pad_mask,
-                src_pad_mask=src_pad_mask
             )
 
         return decoder_output
