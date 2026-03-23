@@ -12,8 +12,8 @@ def test_encoder():
     pse = PositionalEncoding(d_model=3)(embeddings=embedding.embedding_weights)
 
     encoders = [Encoder(in_dim=pse.shape[1], num_heads=8, hidden_layer=8) for _ in range(6)]
-    x = encoders[0].forward(pse, src_pad_mask=None)
+    x = encoders[0].forward(pse)
     for encoder in encoders[1:]:
-        x = encoder.forward(x, src_pad_mask=None)
+        x = encoder.forward(x)
 
     assert pse.shape == x.shape

@@ -15,12 +15,10 @@ def test_transformer():
     cro_pse = PositionalEncoding(d_model=3)(embeddings=cro_embedding.embedding_weights)
     eng_pse = PositionalEncoding(d_model=3)(embeddings=eng_embedding.embedding_weights)
 
-    transformer = EncoderDecoderTransformer(decoder_layers=6, encoder_layers=6, in_dim=EMBEDDING_DIM, hidden_layer=8, num_heads=8)
+    transformer = EncoderDecoderTransformer(decoder_layers=6, encoder_layers=6, d_model=EMBEDDING_DIM, hidden_layer=8, num_heads=8)
     output = transformer.forward(
         encoder_embeddings=cro_pse,
         decoder_embeddings=eng_pse,
-        src_pad_mask=np.array([0.0, 0.0, 0.0, 0.0, -np.inf]),
-        target_pad_mask=np.array([0.0, 0.0, 0.0, 0.0, -np.inf]),
     )
 
     assert output.shape == (len(croatian), EMBEDDING_DIM)
