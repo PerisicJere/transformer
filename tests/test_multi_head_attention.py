@@ -8,7 +8,7 @@ def test_multi_head_attention():
     K = np.random.randn(10, 64)
     V = np.random.randn(10, 64)
 
-    mha = MultiHeadAttention(in_dim=64, out_dim=3, num_heads=8, mask=False)(Q=Q, K=K, V=V)
+    mha = MultiHeadAttention(in_dim=64, out_dim=3, num_heads=8, mask=False)(Q=Q, K=K, V=V, pad_mask=np.zeros((10, 1)))
 
     assert mha.shape == (10, 64)
 

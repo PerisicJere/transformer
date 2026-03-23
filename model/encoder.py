@@ -6,11 +6,11 @@ from model.multi_head_attention import MultiHeadAttention
 
 
 class Encoder:
-    def __init__(self, in_dim: int) -> None:
+    def __init__(self, in_dim: int, num_heads: int, hidden_layer: int) -> None:
         self.multi_head_attention = MultiHeadAttention(
             in_dim=in_dim,
             out_dim=in_dim,
-            num_heads=8,
+            num_heads=num_heads,
             mask=False
         )
         self.layer_norm1 = LayerNormalization(d_model=in_dim)
@@ -18,10 +18,10 @@ class Encoder:
         self.ffnn = FeedForwardNN(
             input_size=in_dim,
             output_size=in_dim,
-            hidden_layer=8
+            hidden_layer=hidden_layer,
         )
 
-    def forward(self, x: np.ndarray, src_pad_mask: np.ndarray) -> np.ndarray:
+    def forward(self, x: np.ndarray, src_pad_mask: np.ndarray | None) -> np.ndarray:
         # first block
         multi_head_attention = self.multi_head_attention(Q=x, K=x, V=x, pad_mask=src_pad_mask)
         multi_head_residual = x + multi_head_attention

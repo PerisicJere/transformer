@@ -1,4 +1,5 @@
 import numpy as np
+from numpy.f2py.auxfuncs import throw_error
 
 
 class Embedding:
@@ -17,7 +18,6 @@ class Embedding:
         embedding_rows: np.ndarray = np.array(
             [self.get_embedding_vector(token) for token in tokens]
         )
-
         return embedding_rows
 
     def get_targets(self, tokens: list[str]) -> np.ndarray:
@@ -39,4 +39,10 @@ class Embedding:
 
     def backward(self, gradients: np.ndarray, target_indices: np.ndarray, learning_rate: np.float32) -> None:
         for i, token_idx in enumerate(target_indices):
-            self.embedding_weights[token_idx] -= learning_rate * np.clip(gradients[i], -1, 1)
+            self.embedding_weights[token_idx] -= learning_rate * np.clip(gradients[i], -5, 5)
+
+    def get_embedding_key(self, token_idx: int) -> str:
+        for token_key, idx in self.mappings.items():
+            if idx == token_idx:
+                return token_key
+        assert False, f"No token found: {token_idx}"

@@ -14,6 +14,6 @@ class Linear:
         dw1 = self.x.T.dot(gradients)
         dx = gradients.dot(dw1.T)
 
-        self.linear -= np.clip(dw1, -1, 1) * learning_rate
+        self.linear -= np.clip(dw1, -5, 5) * learning_rate
 
-        return np.clip(dx, -1, 1)
+        return np.clip(dx, -5, 5)

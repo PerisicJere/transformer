@@ -2,7 +2,7 @@ import numpy as np
 
 
 class LayerNormalization:
-    def __init__(self, d_model: int, epsilon: np.float16 = 1e-6):
+    def __init__(self, d_model: int, epsilon: np.float32 = 1e-6):
         self.x, self.normalized, self.mean, self.variance = None, None, None, None
         self.epsilon = epsilon
         self.d_model = d_model
@@ -31,10 +31,10 @@ class LayerNormalization:
 
         dx = dx / np.sqrt(self.variance + self.epsilon) + d_variance * 2*(self.x - self.mean) / self.d_model + d_mean / self.d_model
 
-        self.beta -= np.clip(d_beta, -1, 1) * learning_rate
-        self.gamma -= np.clip(d_gamma, -1, 1) * learning_rate
+        self.beta -= np.clip(d_beta, -5, 5) * learning_rate
+        self.gamma -= np.clip(d_gamma, -5, 5) * learning_rate
 
-        return np.clip(dx, -1, 1)
+        return np.clip(dx, -5, 5)
 
 
 

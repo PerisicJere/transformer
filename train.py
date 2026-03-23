@@ -6,7 +6,7 @@ import pandas as pd
 from pandas import DataFrame
 from tqdm import tqdm
 
-from config import EMBEDDING_DIM, LEARNING_RATE
+from config import EMBEDDING_DIM, LEARNING_RATE, ALPHA, DECODER_LAYERS, ENCODER_LAYERS, NUM_HEADS, HIDDEN_LAYER
 from model.cross_entropy_loss import CrossEntropyLoss
 from model.embedding import Embedding
 from model.encoder_decoder_transformer import EncoderDecoderTransformer
@@ -46,19 +46,27 @@ if __name__ == '__main__':
     cro_pad_idx = cro_embedding.get_list_of_token_ids(["<PAD>"])[0]
 
     transformer_train = EncoderDecoderTransformer(
-        decoder_layers=2,
-        encoder_layers=2,
+        decoder_layers=DECODER_LAYERS,
+        encoder_layers=ENCODER_LAYERS,
+        num_heads=NUM_HEADS,
+        hidden_layer=HIDDEN_LAYER,
         in_dim=EMBEDDING_DIM,
     )
     linear = Linear(in_dim=EMBEDDING_DIM, out_dim=len(eng_set))
     loss = CrossEntropyLoss()
     losses: list[float] = []
-    pbar = tqdm(range(10))
+    epochs = 50
+    pbar = tqdm(range(epochs))
+    steps = len(df)
+    total_steps: int = epochs * steps
+    lr_new = LEARNING_RATE
     for epoch in pbar:
         loss_sum = 0.0
-        for croatian_input, english_input in zip(df['Cro'], df['Eng']):
+        df = df.sample(frac=1).reset_index(drop=True)
+        for i, (croatian_input, english_input) in enumerate(zip(df['Cro'], df['Eng'])):
             targets: np.ndarray = eng_embedding.get_targets(english_input)
             target_idx: np.ndarray = eng_embedding.get_list_of_token_ids(english_input)
+
             target_pad_mask = np.where(target_idx == eng_pad_idx, -np.inf, 0.0).reshape(1, -1)
 
             src_idx: np.ndarray = cro_embedding.get_list_of_token_ids(croatian_input)
@@ -84,22 +92,48 @@ if __name__ == '__main__':
             loss_sum += loss_value
 
             gradients_decoder, gradients_encoder = transformer_train.backward(
-                d_decoder=linear.backward(probs-targets, learning_rate=LEARNING_RATE),
-                learning_rate=LEARNING_RATE
+                d_decoder=linear.backward(probs-targets, learning_rate=lr_new),
+                learning_rate=lr_new
             )
 
             cro_embedding.backward(
                 gradients=gradients_encoder,
                 target_indices=cro_embedding.get_list_of_token_ids(croatian_input),
-                learning_rate=LEARNING_RATE
+                learning_rate=lr_new
             )
 
             eng_embedding.backward(
                 gradients=gradients_decoder,
                 target_indices=eng_embedding.get_list_of_token_ids(english_input),
-                learning_rate=LEARNING_RATE
+                learning_rate=lr_new
             )
-            pbar.set_description(f"Epoch {epoch}")
 
-        losses.append(loss_sum / len(df))
+            lr_new = ALPHA + 0.5*(LEARNING_RATE - ALPHA)*(1 + np.cos((np.pi * ((steps*epoch)+i)) / total_steps))
 
+            pbar.set_description(f"Epoch {epoch} | Curr Loss: {float(loss_sum / len(df)):.4f} | Learning Rate: {float(lr_new):.20f} | Steps: {int((steps*epoch)+i)}/{int(total_steps)}")
+        losses.append(float(loss_sum / len(df)))
+
+    sentence = ["<SOS>", "Ja", "sam", "student", "<EOS>"]
+    cro_pse = PositionalEncoding(d_model=EMBEDDING_DIM)(
+        embeddings=cro_embedding.construct_table(tokens=sentence)
+    )
+    to_translate = ["<SOS>"]
+
+    while True:
+        eng_pse = PositionalEncoding(d_model=EMBEDDING_DIM)(
+            embeddings=eng_embedding.construct_table(tokens=to_translate)
+        )
+        output = transformer_train.translate(encoder_input=cro_pse, decoder_input=eng_pse)
+        lin = linear(output)
+        probs = softmax(input=lin)
+        token_id: np.int32 = np.argmax(probs)
+
+        translated = eng_embedding.get_embedding_key(token_id.astype(int))
+        to_translate.append(translated)
+
+        if translated == "<EOS>" or len(to_translate) > 7:
+            break
+
+    print(f"Croatian Sentence: {' '.join(sentence)}")
+    print(f"English Translation: {' '.join(to_translate)}")
+    print(losses)

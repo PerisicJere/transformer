@@ -7,7 +7,7 @@ class ScaledDotProductAttention:
         self.scale: int = np.sqrt(d_k / num_heads)
         self.mask = mask
 
-    def forward(self, Q: np.ndarray, K: np.ndarray, V: np.ndarray, pad_mask: np.ndarray) -> np.ndarray:
+    def forward(self, Q: np.ndarray, K: np.ndarray, V: np.ndarray, pad_mask: np.ndarray | None) -> np.ndarray:
         self.Q, self.K, self.V = Q, K, V
         raw_attention_scores: np.ndarray = np.matmul(Q, K.T) / self.scale
 
@@ -15,7 +15,8 @@ class ScaledDotProductAttention:
             masked: np.ndarray = self.__get_mask(raw_attention_scores.shape)
             raw_attention_scores = (raw_attention_scores + masked)
 
-        raw_attention_scores = raw_attention_scores + pad_mask
+        if pad_mask is not None:
+            raw_attention_scores = raw_attention_scores + pad_mask
 
         self.attention_weights = self._softmax(raw_attention_scores)
         return np.matmul(self.attention_weights, V)
@@ -27,7 +28,7 @@ class ScaledDotProductAttention:
         dQ = np.matmul(dS, self.K) / self.scale
         dK = np.matmul(dS.T, self.Q) / self.scale
 
-        return np.clip(dQ, -1, 1), np.clip(dK, -1, 1), np.clip(dV, -1, 1)
+        return np.clip(dQ, -5, 5), np.clip(dK, -5, 5), np.clip(dV, -5, 5)
 
     def _softmax_backward(self, gradients: np.ndarray) -> np.ndarray:
         dP: np.ndarray = gradients.dot(self.V.T)

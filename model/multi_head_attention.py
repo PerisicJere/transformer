@@ -52,4 +52,4 @@ class MultiHeadAttention:
                 )
                 dx = total if dx is None else dx + total
 
-        return (np.clip(dQx, -1, 1), np.clip(dx, -1, 1)) if encoder_input else np.clip(dx, -1, 1)
+        return (np.clip(dQx, -5, 5), np.clip(dx, -5, 5)) if encoder_input else np.clip(dx, -5, 5)

@@ -25,12 +25,12 @@ class FeedForwardNN:
 
         dx = dz1.dot(self.w1.T)
 
-        self.w1 -= np.clip(dw1, -1, 1) * learning_rate
-        self.b1 -= np.clip(db1, -1, 1) * learning_rate
-        self.w2 -= np.clip(dw2, -1, 1) * learning_rate
-        self.b2 -= np.clip(db2, -1, 1) * learning_rate
+        self.w1 -= np.clip(dw1, 5, 5) * learning_rate
+        self.b1 -= np.clip(db1, 5, 5) * learning_rate
+        self.w2 -= np.clip(dw2, 5, 5) * learning_rate
+        self.b2 -= np.clip(db2, 5, 5) * learning_rate
 
-        return np.clip(dx, -1, 1)
+        return np.clip(dx, 5, 5)
 
     @staticmethod
     def linear_transformation(x: np.ndarray, weights: np.ndarray, bias: np.ndarray) -> np.ndarray:

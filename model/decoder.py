@@ -6,17 +6,17 @@ from model.multi_head_attention import MultiHeadAttention
 
 
 class Decoder:
-    def __init__(self, in_dim: int):
+    def __init__(self, in_dim: int, num_heads: int, hidden_layer: int):
         self.masked_multi_head_attention = MultiHeadAttention(
             in_dim=in_dim,
             out_dim=in_dim,
-            num_heads=8,
+            num_heads=num_heads,
             mask=True
         )
         self.multi_head_attention = MultiHeadAttention(
             in_dim=in_dim,
             out_dim=in_dim,
-            num_heads=8,
+            num_heads=num_heads,
             mask=False
         )
 
@@ -27,11 +27,11 @@ class Decoder:
         self.ffnn = FeedForwardNN(
             input_size=in_dim,
             output_size=in_dim,
-            hidden_layer=8
+            hidden_layer=hidden_layer
         )
 
 
-    def forward(self, x: np.ndarray, K_encoder: np.ndarray, V_encoder: np.ndarray, target_pad_mask: np.ndarray, src_pad_mask: np.ndarray) -> np.ndarray:
+    def forward(self, x: np.ndarray, K_encoder: np.ndarray, V_encoder: np.ndarray, target_pad_mask: np.ndarray | None, src_pad_mask: np.ndarray | None) -> np.ndarray:
         # First layer
         masked_multi_head_attention = self.masked_multi_head_attention(
             Q=x,
@@ -75,4 +75,4 @@ class Decoder:
         masked_multi_head_attention__backprop_output = self.masked_multi_head_attention.backward(gradients=layer_norm_1__backprop_output, learning_rate=learning_rate)
         residual_gradient_3 = masked_multi_head_attention__backprop_output + layer_norm_1__backprop_output
 
-        return np.clip(residual_gradient_3, -1, 1), np.clip(d_encoder, -1, 1)
+        return np.clip(residual_gradient_3, -5, 5), np.clip(d_encoder, -5, 5)

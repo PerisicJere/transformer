@@ -24,15 +24,14 @@ def test_attention_backprop():
     cro_pse = PositionalEncoding(d_model=3)(embeddings=cro_embedding.construct_table(tokens=cro_list))
     eng_pse = PositionalEncoding(d_model=3)(embeddings=eng_embedding.construct_table(tokens=eng_list))
 
-    transformer = EncoderDecoderTransformer(decoder_layers=6, encoder_layers=6, in_dim=EMBEDDING_DIM)
-    output = transformer.forward(encoder_embeddings=cro_pse, decoder_embeddings=eng_pse)
+    transformer = EncoderDecoderTransformer(decoder_layers=6, encoder_layers=6, in_dim=EMBEDDING_DIM, hidden_layer=8, num_heads=8)
+    output = transformer.forward(encoder_embeddings=cro_pse, decoder_embeddings=eng_pse, src_pad_mask=np.zeros((5, 1)), target_pad_mask=np.zeros((5, 1)))
 
-    lin = Linear(in_dim=4, out_dim=4)(output)
-    probs = softmax(x=lin)
+    lin = Linear(in_dim=4, out_dim=4)
+    probs = softmax(x=lin(output))
 
     gradients_decoder, gradients_encoder = transformer.backward(
-        probs=probs,
-        targets=targets,
+        d_decoder=lin.backward(probs-targets, learning_rate=np.float32(0.001)),
         learning_rate=np.float32(0.001)
     )
     cro_embedding.backward(gradients=gradients_encoder, target_indices=cro_embedding.get_list_of_token_ids(cro_list),
