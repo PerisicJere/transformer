@@ -5,12 +5,12 @@ from model.encoder import Encoder
 
 
 class EncoderDecoderTransformer:
-    def __init__(self, decoder_layers: int, encoder_layers: int, num_heads: int, hidden_layer: int, in_dim: int):
+    def __init__(self, decoder_layers: int, encoder_layers: int, num_heads: int, hidden_layer: int, d_model: int):
         self.encoders = (
-            [Encoder(in_dim=in_dim, num_heads=num_heads, hidden_layer=hidden_layer) for _ in range(encoder_layers)]
+            [Encoder(in_dim=d_model, num_heads=num_heads, hidden_layer=hidden_layer) for _ in range(encoder_layers)]
         )
         self.decoders = (
-            [Decoder(in_dim=in_dim, num_heads=num_heads, hidden_layer=hidden_layer) for _ in range(decoder_layers)]
+            [Decoder(d_model=d_model, num_heads=num_heads, hidden_layer=hidden_layer) for _ in range(decoder_layers)]
         )
 
     def forward(self,

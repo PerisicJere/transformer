@@ -6,27 +6,27 @@ from model.multi_head_attention import MultiHeadAttention
 
 
 class Decoder:
-    def __init__(self, in_dim: int, num_heads: int, hidden_layer: int):
+    def __init__(self, d_model: int, num_heads: int, hidden_layer: int):
         self.masked_multi_head_attention = MultiHeadAttention(
-            in_dim=in_dim,
-            out_dim=in_dim,
+            in_dim=d_model,
+            out_dim=d_model,
             num_heads=num_heads,
             mask=True
         )
         self.multi_head_attention = MultiHeadAttention(
-            in_dim=in_dim,
-            out_dim=in_dim,
+            in_dim=d_model,
+            out_dim=d_model,
             num_heads=num_heads,
             mask=False
         )
 
-        self.layer_norm1 = LayerNormalization(d_model=in_dim)
-        self.layer_norm2 = LayerNormalization(d_model=in_dim)
-        self.layer_norm3 = LayerNormalization(d_model=in_dim)
+        self.layer_norm1 = LayerNormalization(d_model=d_model)
+        self.layer_norm2 = LayerNormalization(d_model=d_model)
+        self.layer_norm3 = LayerNormalization(d_model=d_model)
 
         self.ffnn = FeedForwardNN(
-            input_size=in_dim,
-            output_size=in_dim,
+            input_size=d_model,
+            output_size=d_model,
             hidden_layer=hidden_layer
         )
 

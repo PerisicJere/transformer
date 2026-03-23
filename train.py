@@ -6,7 +6,7 @@ import pandas as pd
 from pandas import DataFrame
 from tqdm import tqdm
 
-from config import EMBEDDING_DIM, LEARNING_RATE, ALPHA, DECODER_LAYERS, ENCODER_LAYERS, NUM_HEADS, HIDDEN_LAYER
+from config import EMBEDDING_DIM, LEARNING_RATE, ALPHA, DECODER_LAYERS, ENCODER_LAYERS, NUM_HEADS, HIDDEN_LAYER, D_MODEL
 from model.cross_entropy_loss import CrossEntropyLoss
 from model.embedding import Embedding
 from model.encoder_decoder_transformer import EncoderDecoderTransformer
@@ -16,17 +16,17 @@ from model.softmax import softmax
 
 _STRING_CLEAN: Final = re.compile(r'[^\w\s]')
 
-def translate(transformer: EncoderDecoderTransformer, hrvatski: Embedding, engleski: Embedding):
-    sentence = ["<SOS>", "Ja", "sam", "student", "<EOS>"]
-    cro_pse = PositionalEncoding(d_model=EMBEDDING_DIM)(
-        embeddings=hrvatski.construct_table(tokens=sentence)
+def translate(transformer: EncoderDecoderTransformer, francuski: Embedding, engleski: Embedding):
+    sentence = ["<SOS>", "I", "am", "student", "<EOS>"]
+    fra_pse = PositionalEncoding(d_model=EMBEDDING_DIM)(
+        embeddings=francuski.construct_table(tokens=sentence)
     )
     to_translate = ["<SOS>"]
     while True:
         eng_pse = PositionalEncoding(d_model=EMBEDDING_DIM)(
             embeddings=engleski.construct_table(tokens=to_translate)
         )
-        output = transformer.translate(encoder_input=cro_pse, decoder_input=eng_pse)
+        output = transformer.translate(encoder_input=fra_pse, decoder_input=eng_pse)
         lin = linear(output)
         probs = softmax(input=lin)
         token_id: np.int32 = np.argmax(probs[-1])
@@ -37,27 +37,27 @@ def translate(transformer: EncoderDecoderTransformer, hrvatski: Embedding, engle
         if translated == "<EOS>" or len(to_translate) > 7:
             break
 
-    print(f"Croatian Sentence: {' '.join(sentence)}")
+    print(f"French Sentence: {' '.join(sentence)}")
     print(f"English Translation: {' '.join(to_translate)}")
 
 
 if __name__ == '__main__':
-    df: DataFrame = pd.read_csv('data/EngCro.tsv', sep='\t')
+    df: DataFrame = pd.read_csv('data/engFra.tsv', sep='\t')
     df['Eng'] = (df['Eng'].apply(lambda row: [re.sub(_STRING_CLEAN, '', token) for token in row.split(' ')])
                  .apply(lambda row: ["<SOS>"] + row + ["<EOS>"]))
-    df['Cro'] = (df['Cro'].apply(lambda row: [re.sub(_STRING_CLEAN, '', token) for token in row.split(' ')])
+    df['Fra'] = (df['Fra'].apply(lambda row: [re.sub(_STRING_CLEAN, '', token) for token in row.split(' ')])
                  .apply(lambda row: ["<SOS>"] + row + ["<EOS>"]))
 
-    cro_set: set[str] = set()
+    fra_set: set[str] = set()
     eng_set: set[str] = set()
-    for cro_val, eng_val in zip(df['Cro'].tolist(), df['Eng'].tolist()):
-        cro_set.update(cro_val)
+    for fra_val, eng_val in zip(df['Fra'].tolist(), df['Eng'].tolist()):
+        fra_set.update(fra_val)
         eng_set.update(eng_val)
 
-    cro_embedding: Embedding = Embedding(vocab_size=len(cro_set), embedding_size=EMBEDDING_DIM)
+    fra_embedding: Embedding = Embedding(vocab_size=len(fra_set), embedding_size=EMBEDDING_DIM)
     eng_embedding: Embedding = Embedding(vocab_size=len(eng_set), embedding_size=EMBEDDING_DIM)
 
-    cro_embedding.add_mapping(list(cro_set))
+    fra_embedding.add_mapping(list(fra_set))
     eng_embedding.add_mapping(list(eng_set))
 
     transformer_train = EncoderDecoderTransformer(
@@ -65,11 +65,11 @@ if __name__ == '__main__':
         encoder_layers=ENCODER_LAYERS,
         num_heads=NUM_HEADS,
         hidden_layer=HIDDEN_LAYER,
-        in_dim=EMBEDDING_DIM,
+        d_model=D_MODEL,
     )
     linear = Linear(in_dim=EMBEDDING_DIM, out_dim=len(eng_set))
     loss = CrossEntropyLoss()
-    losses: list[float] = []
+    losses = []
     epochs = 50
     pbar = tqdm(range(epochs))
     steps = len(df)
@@ -78,18 +78,18 @@ if __name__ == '__main__':
     for epoch in pbar:
         loss_sum = 0.0
         df = df.sample(frac=1).reset_index(drop=True)
-        for i, (croatian_input, english_input) in enumerate(zip(df['Cro'], df['Eng'])):
+        for i, (french_input, english_input) in enumerate(zip(df['Fra'], df['Eng'])):
             targets: np.ndarray = eng_embedding.get_targets(english_input)
 
-            cro_pse = PositionalEncoding(d_model=EMBEDDING_DIM)(
-                embeddings=cro_embedding.construct_table(tokens=croatian_input)
+            fra_pse = PositionalEncoding(d_model=EMBEDDING_DIM)(
+                embeddings=fra_embedding.construct_table(tokens=french_input)
             )
             eng_pse = PositionalEncoding(d_model=EMBEDDING_DIM)(
                 embeddings=eng_embedding.construct_table(tokens=english_input)
             )
 
             output = transformer_train.forward(
-                encoder_embeddings=cro_pse,
+                encoder_embeddings=fra_pse,
                 decoder_embeddings=eng_pse,
             )
             lin = linear(output)
@@ -103,9 +103,9 @@ if __name__ == '__main__':
                 learning_rate=lr_new
             )
 
-            cro_embedding.backward(
+            fra_embedding.backward(
                 gradients=gradients_encoder,
-                target_indices=cro_embedding.get_list_of_token_ids(croatian_input),
+                target_indices=fra_embedding.get_list_of_token_ids(french_input),
                 learning_rate=lr_new
             )
 
@@ -119,9 +119,13 @@ if __name__ == '__main__':
 
             pbar.set_description(f"Epoch {epoch} | Curr Loss: {float(loss_sum / len(df)):.4f} | Learning Rate: {float(lr_new):.20f} | Steps: {int((steps*epoch)+i)}/{int(total_steps)}")
 
-        if epoch % 10 == 0:
-            translate(transformer=transformer_train, hrvatski=cro_embedding, engleski=eng_embedding)
-
         losses.append(float(loss_sum / len(df)))
+
+        if epoch % 10 == 0:
+            translate(transformer=transformer_train, francuski=fra_embedding, engleski=eng_embedding)
+            best_loss: int = np.argmin(losses).astype(int)
+            first_loss = losses[0]
+            curr_loss = losses[-1]
+            print(f"Current Best Loss: {losses[best_loss]} | Curr Loss: {curr_loss} | {f"Dropped {((first_loss-curr_loss)/first_loss)*100:.2f}%"}")
 
     print(losses)
