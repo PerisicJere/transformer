@@ -18,20 +18,20 @@ _STRING_CLEAN: Final = re.compile(r'[^\w\s]')
 
 def translate(transformer: EncoderDecoderTransformer, francuski: Embedding, engleski: Embedding):
     sentence = ["<SOS>", "I", "am", "student", "<EOS>"]
-    fra_pse = PositionalEncoding(d_model=EMBEDDING_DIM)(
-        embeddings=francuski.construct_table(tokens=sentence)
+    eng_pse = PositionalEncoding(d_model=EMBEDDING_DIM)(
+        embeddings=engleski.construct_table(tokens=sentence)
     )
     to_translate = ["<SOS>"]
     while True:
-        eng_pse = PositionalEncoding(d_model=EMBEDDING_DIM)(
-            embeddings=engleski.construct_table(tokens=to_translate)
+        fra_pse = PositionalEncoding(d_model=EMBEDDING_DIM)(
+            embeddings=francuski.construct_table(tokens=to_translate)
         )
         output = transformer.translate(encoder_input=fra_pse, decoder_input=eng_pse)
         lin = linear(output)
         probs = softmax(input=lin)
         token_id: np.int32 = np.argmax(probs[-1])
 
-        translated = eng_embedding.get_embedding_key(token_id.astype(int))
+        translated = francuski.get_embedding_key(token_id.astype(int))
         to_translate.append(translated)
 
         if translated == "<EOS>" or len(to_translate) > 7:
@@ -70,7 +70,7 @@ if __name__ == '__main__':
     linear = Linear(in_dim=EMBEDDING_DIM, out_dim=len(eng_set))
     loss = CrossEntropyLoss()
     losses = []
-    epochs = 50
+    epochs = 100
     pbar = tqdm(range(epochs))
     steps = len(df)
     total_steps: int = epochs * steps
