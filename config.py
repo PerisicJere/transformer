@@ -2,8 +2,8 @@ from typing import Final
 
 import numpy as np
 
-EMBEDDING_DIM: Final = 128
-D_MODEL: Final = 128
+EMBEDDING_DIM: Final = 512
+D_MODEL: Final = 512
 ENCODER_LAYERS: Final = 6
 DECODER_LAYERS: Final = 6
 NUM_HEADS: Final = 12
