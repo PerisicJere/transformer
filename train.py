@@ -9,7 +9,6 @@ from tqdm import tqdm
 from config import (
     EMBEDDING_DIM,
     LEARNING_RATE,
-    ALPHA,
     DECODER_LAYERS,
     ENCODER_LAYERS,
     NUM_HEADS,
@@ -96,15 +95,17 @@ if __name__ == "__main__":
     linear = Linear(in_dim=EMBEDDING_DIM, out_dim=len(eng_set))
     loss = CrossEntropyLoss()
     losses = []
-    epochs = 100
+    epochs, warmup_steps = 100, 4000
     pbar = tqdm(range(epochs))
     steps = len(df)
+    print(f"Training {steps} steps")
     total_steps: int = epochs * steps
     lr_new = LEARNING_RATE
     for epoch in pbar:
         loss_sum = 0.0
         df = df.sample(frac=1).reset_index(drop=True)
         for i, (french_input, english_input) in enumerate(zip(df["Fra"], df["Eng"])):
+            step = ((steps * epoch) + i) + 1
             targets: np.ndarray = eng_embedding.get_targets(english_input)
 
             fra_pse = PositionalEncoding(d_model=EMBEDDING_DIM)(
@@ -144,12 +145,12 @@ if __name__ == "__main__":
                 learning_rate=lr_new,
             )
 
-            lr_new = ALPHA + 0.5 * (LEARNING_RATE - ALPHA) * (
-                1 + np.cos((np.pi * ((steps * epoch) + i)) / total_steps)
+            lr_new = D_MODEL ** (-0.5) * min(
+                step ** (-0.5), step * (warmup_steps ** (-1.5))
             )
 
             pbar.set_description(
-                f"Epoch {epoch} | Curr Loss: {float(loss_sum / len(df)):.4f} | Learning Rate: {float(lr_new):.20f} | Steps: {int((steps * epoch) + i)}/{int(total_steps)}"
+                f"Epoch {epoch} | Curr Loss: {float(loss_sum / len(df)):.4f} | Learning Rate: {float(lr_new):.20f} | Steps: {step}/{int(total_steps)}"
             )
 
         losses.append(float(loss_sum / len(df)))
