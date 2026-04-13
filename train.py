@@ -13,7 +13,8 @@ from config import (
     ENCODER_LAYERS,
     NUM_HEADS,
     HIDDEN_LAYER,
-    D_MODEL, BATCH_SIZE,
+    D_MODEL,
+    BATCH_SIZE,
 )
 from model.cross_entropy_loss import CrossEntropyLoss
 from model.embedding import Embedding
@@ -24,16 +25,23 @@ from model.softmax import softmax
 
 _STRING_CLEAN: Final = re.compile(r"[^\w\s]")
 
+
 def prepare_batched_input(sentences_to_batch: np.ndarray) -> list[list[str]]:
     max_len = max(len(sentence) for sentence in sentences_to_batch)
-    sentences_to_batch: list[list[str]] = [sentence + ["<PAD>"] * (max_len - len(sentence)) for sentence in sentences_to_batch]
+    sentences_to_batch: list[list[str]] = [
+        sentence + ["<PAD>"] * (max_len - len(sentence))
+        for sentence in sentences_to_batch
+    ]
     return sentences_to_batch
 
 
 def translate(
     transformer: EncoderDecoderTransformer, francuski: Embedding, engleski: Embedding
 ):
-    sentence = [["<SOS>", "I", "am", "student", "<EOS>"], ["<SOS>", "Are", "you", "going", "to", "school", "<EOS>"]]
+    sentence = [
+        ["<SOS>", "I", "am", "student", "<EOS>"],
+        ["<SOS>", "Are", "you", "going", "to", "school", "<EOS>"],
+    ]
     sentence_eng = prepare_batched_input(sentence)
     postitional_encoding = PositionalEncoding(d_model=EMBEDDING_DIM)
     eng_pse = postitional_encoding(
@@ -138,7 +146,9 @@ if __name__ == "__main__":
             np.get_default_memory_pool().free_all_blocks()
             np.get_default_pinned_memory_pool().free_all_blocks()
             fra_pse = fra_pos_enc(
-                embeddings=fra_embedding.construct_table(batch_sentences=french_decoder_input)
+                embeddings=fra_embedding.construct_table(
+                    batch_sentences=french_decoder_input
+                )
             )
             eng_pse = eng_pos_enc(
                 embeddings=eng_embedding.construct_table(batch_sentences=english_input)
@@ -165,10 +175,12 @@ if __name__ == "__main__":
             pad_id = fra_embedding.mappings["<PAD>"]
             pad_mask = (target_ids != pad_id).astype(np.float32)
             grad *= pad_mask[:, :, None]
-            grad /= (probs.shape[0] * probs.shape[1])
+            grad /= probs.shape[0] * probs.shape[1]
             del probs
             gradients_decoder, gradients_encoder = transformer_train.backward(
-                d_decoder=linear.backward(grad.astype(np.float32), learning_rate=lr_new),
+                d_decoder=linear.backward(
+                    grad.astype(np.float32), learning_rate=lr_new
+                ),
                 learning_rate=lr_new,
             )
             gradients_decoder = gradients_decoder.astype(np.float32)
@@ -176,7 +188,9 @@ if __name__ == "__main__":
 
             fra_embedding.backward(
                 gradients=gradients_decoder,
-                target_indices=fra_embedding.get_list_of_token_ids(french_target),
+                target_indices=fra_embedding.get_list_of_token_ids(
+                    french_decoder_input
+                ),
                 learning_rate=lr_new,
             )
 
