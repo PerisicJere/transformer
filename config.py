@@ -9,3 +9,4 @@ DECODER_LAYERS: Final = 2
 NUM_HEADS: Final = 4
 HIDDEN_LAYER: Final = D_MODEL * 4
 LEARNING_RATE: Final = np.float32(0.0001)
+BATCH_SIZE: Final = 32

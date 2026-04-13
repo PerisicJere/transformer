@@ -1,4 +1,4 @@
-import numpy as np
+import cupy as np
 
 
 class LayerNormalization:
@@ -6,8 +6,8 @@ class LayerNormalization:
         self.x, self.normalized, self.mean, self.variance = None, None, None, None
         self.epsilon = epsilon
         self.d_model = d_model
-        self.beta = np.zeros(d_model)
-        self.gamma = np.ones(d_model)
+        self.beta = np.zeros(d_model).astype(np.float32)
+        self.gamma = np.ones(d_model).astype(np.float32)
 
     def normalize(self, x: np.ndarray) -> np.ndarray:
         self.x = x
@@ -19,9 +19,10 @@ class LayerNormalization:
         return self.gamma * self.normalized + self.beta
 
     def backward(self, gradients: np.ndarray, learning_rate: np.float32) -> np.ndarray:
-
-        d_beta = gradients.sum(axis=0)
-        d_gamma = (gradients * self.normalized).sum(axis=0)
+        grad_2d = gradients.reshape(-1, gradients.shape[-1])
+        normalized_2d = self.normalized.reshape(-1, self.normalized.shape[-1])
+        d_beta = grad_2d.sum(axis=0)
+        d_gamma = (grad_2d * normalized_2d).sum(axis=0)
 
         dx = gradients * self.gamma
 

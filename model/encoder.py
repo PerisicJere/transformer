@@ -1,4 +1,4 @@
-import numpy as np
+import cupy as np
 
 from model.feed_forward_nn import FeedForwardNN
 from model.layer_normalization import LayerNormalization
@@ -9,7 +9,7 @@ class Encoder:
     def __init__(self, in_dim: int, num_heads: int, hidden_layer: int) -> None:
         self.multi_head_attention = MultiHeadAttention(
             in_dim=in_dim,
-            out_dim=in_dim,
+            out_dim=in_dim // num_heads,
             num_heads=num_heads,
             mask=False
         )

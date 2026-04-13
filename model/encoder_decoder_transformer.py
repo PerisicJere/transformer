@@ -1,4 +1,4 @@
-import numpy as np
+import cupy as np
 
 from model.decoder import Decoder
 from model.encoder import Encoder
@@ -52,7 +52,7 @@ class EncoderDecoderTransformer:
             d_decoder, dx = decoder.backward(gradients=d_decoder, learning_rate=learning_rate)
             d_encoder = dx if d_encoder is None else d_encoder + dx
 
-        d_encoder = np.array(d_encoder)
+        d_encoder = np.array(d_encoder).astype(np.float32)
         for encoder in reversed(self.encoders):
             d_encoder = encoder.backward(gradients=d_encoder, learning_rate=learning_rate)
 

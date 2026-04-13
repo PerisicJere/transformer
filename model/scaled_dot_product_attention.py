@@ -1,4 +1,4 @@
-import numpy as np
+import cupy as np
 
 
 class ScaledDotProductAttention:
@@ -6,31 +6,35 @@ class ScaledDotProductAttention:
         self.Q, self.K, self.V, self.attention_weights = None, None, None, None
         self.scale: int = np.sqrt(d_k / num_heads)
         self.mask = mask
+        self._mask_cache = {}
 
     def forward(self, Q: np.ndarray, K: np.ndarray, V: np.ndarray) -> np.ndarray:
         self.Q, self.K, self.V = Q, K, V
-        raw_attention_scores: np.ndarray = np.matmul(Q, K.T) / self.scale
+        raw_attention_scores: np.ndarray = np.matmul(Q, K.transpose(0, 1, 3, 2)) / self.scale
 
         if self.mask:
-            masked: np.ndarray = self.__get_mask(raw_attention_scores.shape)
-            raw_attention_scores = (raw_attention_scores + masked)
+            seq_len = raw_attention_scores.shape[-1]
+            if seq_len not in self._mask_cache:
+                masked = self.__get_mask((seq_len, seq_len))
+                self._mask_cache[seq_len] = masked
+            masked = self._mask_cache[seq_len]
+            raw_attention_scores = raw_attention_scores + masked
 
         self.attention_weights = self._softmax(raw_attention_scores)
         return np.matmul(self.attention_weights, V)
 
     def backward(self, gradients: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-        dV = self.attention_weights.T.dot(gradients)
+        dV = self.attention_weights.transpose(0, 1, 3, 2) @ gradients
         dS = self._softmax_backward(gradients)
 
         dQ = np.matmul(dS, self.K) / self.scale
-        dK = np.matmul(dS.T, self.Q) / self.scale
+        dK = np.matmul(dS.transpose(0, 1, 3, 2), self.Q) / self.scale
 
         return np.clip(dQ, -5, 5), np.clip(dK, -5, 5), np.clip(dV, -5, 5)
 
     def _softmax_backward(self, gradients: np.ndarray) -> np.ndarray:
-        dP: np.ndarray = gradients.dot(self.V.T)
-        O: np.ndarray = np.matmul(self.attention_weights, self.V)
-        row_sum: np.ndarray = (gradients * O).sum(axis=1, keepdims=True)
+        dP: np.ndarray = gradients @ self.V.transpose(0, 1, 3, 2)
+        row_sum: np.ndarray = (dP * self.attention_weights).sum(axis=-1, keepdims=True)
 
         dS: np.ndarray = (dP * self.attention_weights) - (row_sum * self.attention_weights)
 

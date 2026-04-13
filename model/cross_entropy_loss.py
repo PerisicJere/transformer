@@ -1,14 +1,14 @@
-import numpy as np
+import cupy as np
 
 
 class CrossEntropyLoss:
     @staticmethod
     def compute(targets: np.ndarray, probabilities: np.ndarray) -> np.float32:
-        loss: np.float32 = np.float32(0.0)
+        batch_size, seq_len = targets.shape
 
-        for i, target_id in enumerate(targets.data):
-            prob = probabilities[i][target_id]
-            loss += np.where(prob > 0, -np.log(prob), 0)
-        loss /= len(targets.data)
+        batch_idx = np.arange(batch_size)[:, None]
+        seq_idx   = np.arange(seq_len)[None, :]
+        target_probs = probabilities[batch_idx, seq_idx, targets]
 
+        loss = -np.log(np.clip(target_probs, 1e-9, 1.0)).mean()
         return loss
